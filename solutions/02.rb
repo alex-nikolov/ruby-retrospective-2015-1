@@ -19,22 +19,22 @@ def snake_ahead?(snake, direction)
   snake.include? new_head(snake, direction)
 end
 
-def wall_ahead?(snake, direction, dimensions)
-  small_width = new_head(snake, direction)[0] < 0
-  big_width = new_head(snake, direction)[0] >= dimensions[:width]
-  small_height = new_head(snake, direction)[1] < 0
-  big_height = new_head(snake, direction)[1] >= dimensions[:height]
+def wall_ahead?(next_head_position, dimensions)
+  next_x, next_y = next_head_position
 
-  small_width or small_height or big_width or big_height
+  next_x < 0 or next_x >= dimensions[:width] or
+    next_y < 0 or next_y >= dimensions[:height]
 end
 
 def obstacle_ahead?(snake, direction, dimensions)
+  next_head_position = new_head(snake, direction)
+
   snake_ahead?(snake, direction) or
-    wall_ahead?(snake, direction, dimensions)
+    wall_ahead?(next_head_position, dimensions)
 end
 
 def danger?(snake, direction, dimensions)
   moved_snake = move(snake, direction)
-  close_to_death = obstacle_ahead?(snake, direction, dimensions) or
-                     obstacle_ahead?(moved_snake, direction, dimensions)
+  obstacle_ahead?(snake, direction, dimensions) or
+    obstacle_ahead?(moved_snake, direction, dimensions)
 end
