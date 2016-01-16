@@ -37,30 +37,35 @@ class RationalSequence
     @length = length
   end
 
-  def get_next(rational_array)
-    if rational_array[0] == 1 and rational_array[1].even?
-      [rational_array[0], rational_array[1] + 1]
-    elsif rational_array[1] == 1 and rational_array[0].odd?
-      [rational_array[0] + 1, rational_array[1]]
-    elsif (rational_array[0] + rational_array[1]).odd?
-      [rational_array[0] - 1, rational_array[1] + 1]
-    elsif (rational_array[0] + rational_array[1]).even?
-      [rational_array[0] + 1, rational_array[1] - 1]
+  def get_next_pair(pair_number)
+    n = pair_number
+    k = 1
+
+    while n >= k
+      n -= k
+      k += 1
     end
+
+    if k.even? then [k - n, n + 1] else [n + 1, k - n] end
   end
 
   def last
-    self.to_a.last
+    to_a.last
   end
 
   def each
-    rational_array, current = [1, 0], 0
-    while current < @length
-      rational_array = get_next(rational_array)
-      if (rational_array[0].gcd(rational_array[1]) == 1)
-        yield Rational(rational_array.first, rational_array.last)
-        current += 1
+    current_count = 0
+    current_size = 0
+
+    while current_size < @length
+      numerator, denominator = get_next_pair(current_count)
+
+      if numerator.gcd(denominator) == 1
+        yield Rational(numerator, denominator)
+        current_size += 1
       end
+
+      current_count += 1
     end
   end
 end
