@@ -14,9 +14,7 @@ module DrunkenMathematician
 
   def aimless(n)
     prime_pairs = PrimeSequence.new(n).each_slice(2).to_a
-    if n % 2 == 1
-      prime_pairs[n / 2].push(1)
-    end
+    prime_pairs[n / 2].push(1) if n % 2 == 1
     prime_pairs.collect { |pair| Rational(pair[0], pair[1]) }.reduce(0, :+)
   end
 
@@ -68,7 +66,7 @@ class RationalSequence
       k += 1
     end
 
-    if k.even? then [k - n, n + 1] else [n + 1, k - n] end
+    k.even? ? [k - n, n + 1] : [n + 1, k - n]
   end
 end
 
@@ -80,9 +78,8 @@ class PrimeSequence
   end
 
   def each
-    if @length > 0
-      yield 2
-    end
+    yield 2 if @length > 0
+
     current, element_number = 3, 1
     while element_number < @length
       if current.prime?
