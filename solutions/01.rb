@@ -1,3 +1,10 @@
+EXCHANGE_RATE = {
+  bgn: 1,
+  usd: 1.7408,
+  eur: 1.9557,
+  gbp: 2.6415,
+}
+
 def convert_to_bgn(price, currency)
   price_in_bgn = case currency
                    when :usd then price * 1.7408
