@@ -3,14 +3,11 @@ def new_head(snake, direction)
 end
 
 def move(snake, direction)
-  new_snake = snake.dup
-  new_snake.shift
-  new_snake << new_head(new_snake, direction)
+  grow(snake, direction).drop(1)
 end
 
 def grow(snake, direction)
-  new_snake = snake.dup
-  new_snake << new_head(new_snake, direction)
+  snake + [new_head(snake, direction)]
 end
 
 def new_food(food, snake, dimensions)
