@@ -19,7 +19,9 @@ module DrunkenMathematician
   end
 
   def worthless(n)
-    fibonacci_n, sum = FibonacciSequence.new(n).to_a.last, 0
+    fibonacci_n = FibonacciSequence.new(n).to_a.last
+    sum = 0
+
     sequence = RationalSequence.new((1.5**n).floor)
     sequence.take_while do |x|
       sum += x
@@ -35,20 +37,16 @@ class RationalSequence
     @length = length
   end
 
-  def last
-    to_a.last
-  end
-
   def each
     current_count = 0
-    current_size = 0
+    element_number = 0
 
-    while current_size < @length
+    while element_number < @length
       numerator, denominator = get_next_pair(current_count)
 
       if numerator.gcd(denominator) == 1
         yield Rational(numerator, denominator)
-        current_size += 1
+        element_number += 1
       end
 
       current_count += 1
@@ -80,13 +78,15 @@ class PrimeSequence
   def each
     yield 2 if @length > 0
 
-    current, element_number = 3, 1
+    current_number = 3
+    element_number = 1
+
     while element_number < @length
-      if current.prime?
-        yield current
+      if current_number.prime?
+        yield current_number
         element_number += 1
       end
-      current += 2
+      current_number += 2
     end
   end
 end
@@ -95,14 +95,20 @@ class FibonacciSequence
   include Enumerable
 
   def initialize(length, first: 1, second: 1)
-    @length, @first, @second = length, first, second
+    @length = length
+    @first = first
+    @second = second
   end
 
   def each
-    element_number, current, previous = 0, @first, @second - @first
+    element_number = 0
+    current_number = @first
+    previous_number = @second - @first
+
     while element_number < @length
-      yield current
-      element_number, current, previous = element_number + 1, current + previous, current
+      yield current_number
+      element_number += 1
+      current_number, previous_number = current_number + previous_number, current_number
     end
   end
 end
