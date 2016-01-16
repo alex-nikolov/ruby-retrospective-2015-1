@@ -12,14 +12,14 @@ end
 
 def new_food(food, snake, dimensions)
   play_field = [*0...dimensions[:width]].product [*0...dimensions[:height]]
-  new_food_location = (play_field - food - snake).sample
+  (play_field - food - snake).sample
 end
 
-def obstacle_snake?(snake, direction)
+def snake_ahead?(snake, direction)
   snake.include? new_head(snake, direction)
 end
 
-def obstacle_wall?(snake, direction, dimensions)
+def wall_ahead?(snake, direction, dimensions)
   small_width = new_head(snake, direction)[0] < 0
   big_width = new_head(snake, direction)[0] >= dimensions[:width]
   small_height = new_head(snake, direction)[1] < 0
@@ -29,12 +29,12 @@ def obstacle_wall?(snake, direction, dimensions)
 end
 
 def obstacle_ahead?(snake, direction, dimensions)
-  obstacle_snake?(snake, direction) or
-  obstacle_wall?(snake, direction, dimensions)
+  snake_ahead?(snake, direction) or
+    wall_ahead?(snake, direction, dimensions)
 end
 
 def danger?(snake, direction, dimensions)
   moved_snake = move(snake, direction)
   close_to_death = obstacle_ahead?(snake, direction, dimensions) or
-                   obstacle_ahead?(moved_snake, direction, dimensions)
+                     obstacle_ahead?(moved_snake, direction, dimensions)
 end
