@@ -1,4 +1,4 @@
-class Numeric
+class Integer
   def prime?
     (1..self / 2).one? { |remainder| self % remainder == 0 }
   end
