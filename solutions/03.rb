@@ -37,18 +37,6 @@ class RationalSequence
     @length = length
   end
 
-  def get_next_pair(pair_number)
-    n = pair_number
-    k = 1
-
-    while n >= k
-      n -= k
-      k += 1
-    end
-
-    if k.even? then [k - n, n + 1] else [n + 1, k - n] end
-  end
-
   def last
     to_a.last
   end
@@ -67,6 +55,20 @@ class RationalSequence
 
       current_count += 1
     end
+  end
+
+  private
+
+  def get_next_pair(pair_number)
+    n = pair_number
+    k = 1
+
+    while n >= k
+      n -= k
+      k += 1
+    end
+
+    if k.even? then [k - n, n + 1] else [n + 1, k - n] end
   end
 end
 
