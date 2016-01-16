@@ -10,8 +10,8 @@ def convert_to_bgn(price, currency)
   price_in_bgn.round(2)
 end
 
-def compare_prices(price_one, currency_one, price_two, currency_two)
-  price_one_in_bgn = convert_to_bgn(price_one, currency_one)
-  price_two_in_bgn = convert_to_bgn(price_two, currency_two)
-  price_one_in_bgn <=> price_two_in_bgn
+def compare_prices(first_price, first_currency, second_price, second_currency)
+  first_price_in_bgn = convert_to_bgn(first_price, first_currency)
+  second_price_in_bgn = convert_to_bgn(second_price, second_currency)
+  first_price_in_bgn <=> second_price_in_bgn
 end
