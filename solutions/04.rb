@@ -1,12 +1,3 @@
-module KingsAndQueensMethods
-  def belote?(cards)
-    kings_queens = cards.find_all { |x| x.rank == :king or x.rank == :queen }
-    kings_queens.sort_by! { |x| [x.suit, belote_ranks[x.rank]] }
-    same_suit = -> (card_group) { card_group[0].suit == card_group[1].suit }
-    kings_queens.each_cons(2).any?(&same_suit)
-  end
-end
-
 class Card
   def initialize(rank, suit)
     @rank = rank
@@ -37,7 +28,7 @@ class Deck
     if cards
       @cards = cards
     else
-      @cards = @ranks.product(@suits).map { |rank, suit| Card.new(rank, suit) }
+      @cards = @ranks.product(SUITS).map { |rank, suit| Card.new(rank, suit) }
     end
   end
 
@@ -70,7 +61,8 @@ class Deck
   end
 
   def sort
-    @cards.sort_by! { |c| [c.suit.to_s, - @card_ranks[c.rank]] }.reverse!
+    @cards.sort_by! { |card| [card.suit.to_s, @ranks.find_index(card.rank)] }
+    @cards.reverse!
   end
 
   def to_s
@@ -104,10 +96,10 @@ class WarDeck < Deck
   end
 
   def deal
-    WarHand.new(self, 26)
+    Hand.new(self, 26)
   end
 
-  class WarHand < Deck::Hand
+  class Hand < Deck::Hand
     def play_card
       @cards.delete_at(0)
     end
@@ -119,37 +111,42 @@ class WarDeck < Deck
 end
 
 class BeloteDeck < Deck
+  RANKS = [7, 8, 9, :jack, :queen, :king, 10, :ace]
+
   def initialize(cards = nil)
-    @deal_cards_number = 8
-    @card_ranks = belote_ranks
-    initialize_cards(cards)
+    super(RANKS, cards)
   end
 
   def deal
-    BeloteHand.new(cards_to_be_dealt)
+    Hand.new(self, 8)
   end
 
-  class BeloteHand < Deck::Hand
+  class Hand < Deck::Hand
 
     def highest_of_suit(suit)
-      same_suit_cards = cards.find_all { |x| x.suit == suit }
-      same_suit_card.min_by { |x| belote_ranks[x.rank] }
+      same_suit_cards = @cards.find_all { |card| card.suit == suit }
+      same_suit_cards.min_by { |card| card.rank }
     end
 
     def belote?
-      KingsAndQueensMethods.belote?(cards)
+      SUITS.any? do |suit|
+        has_king = @cards.include?(Card.new(:king, suit))
+        has_queen = @cards.include?(Card.new(:queen, suit))
+
+        has_king and has_queen
+      end
     end
 
     def tierce?
-      consecutive_from_same_suit?(3)
+      consecutive_cards_from_same_suit?(3)
     end
 
     def quarte?
-      consecutive_from_same_suit?(4)
+      consecutive_cards_from_same_suit?(4)
     end
 
     def quint?
-      consecutive_from_same_suit?(5)
+      consecutive_cards_from_same_suit?(5)
     end
 
     def carre_of_jacks?
@@ -166,8 +163,8 @@ class BeloteDeck < Deck
 
     private
 
-    def consecutive_from_same_suit?(number_of_cards)
-      sorted_cards = cards.sort_by { |x| [x.suit, - belote_ranks[x.rank]] }
+    def consecutive_cards_from_same_suit?(number_of_cards)
+      sorted_cards = cards.sort_by { |card| [card.suit, - card.rank] }
 
       sorted_cards.each_cons(number_of_cards).any? do |card_group|
         same_suit = card_group.all? { |card| card.suit == card_group[0].suit }
