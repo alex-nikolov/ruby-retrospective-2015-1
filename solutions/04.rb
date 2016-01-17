@@ -122,14 +122,13 @@ class BeloteDeck < Deck
   end
 
   class Hand < Deck::Hand
-
     def highest_of_suit(suit)
       same_suit_cards = @cards.find_all { |card| card.suit == suit }
-      same_suit_cards.min_by { |card| card.rank }
+      same_suit_cards.max_by { |card| RANKS.find_index(card.rank) }
     end
 
     def belote?
-      SUITS.any? do |suit|
+      Deck::SUITS.any? do |suit|
         has_king = @cards.include?(Card.new(:king, suit))
         has_queen = @cards.include?(Card.new(:queen, suit))
 
@@ -164,7 +163,8 @@ class BeloteDeck < Deck
     private
 
     def consecutive_cards_from_same_suit?(number_of_cards)
-      sorted_cards = cards.sort_by { |card| [card.suit, - card.rank] }
+      suit_and_rank = -> (card) { [card.suit, RANKS.find_index(card.rank)] }
+      sorted_cards = cards.sort_by &suit_and_rank
 
       sorted_cards.each_cons(number_of_cards).any? do |card_group|
         same_suit = card_group.all? { |card| card.suit == card_group[0].suit }
@@ -172,17 +172,14 @@ class BeloteDeck < Deck
       end
     end
 
-    def consecutive_cards?(sorted_card_group)
-      rank_plus_index = Array.new
-
-      sorted_card_group.each_with_index do |card, i|
-        rank_plus_index[i] = belote_ranks[card.rank] + i
+    def consecutive_cards?(card_group)
+      card_group.each_cons(2).all? do |first, second| 
+        RANKS.find_index(second.rank) == RANKS.find_index(first.rank) + 1
       end
-      rank_plus_index.uniq.length == 1
     end
 
     def four_of_a_kind?(rank)
-      cards.count { |card| card.rank == rank }
+      cards.count { |card| card.rank == rank } == 4
     end
   end
 end
