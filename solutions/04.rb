@@ -173,7 +173,7 @@ class BeloteDeck < Deck
     end
 
     def consecutive_cards?(card_group)
-      card_group.each_cons(2).all? do |first, second| 
+      card_group.each_cons(2).all? do |first, second|
         RANKS.find_index(second.rank) == RANKS.find_index(first.rank) + 1
       end
     end
@@ -185,27 +185,34 @@ class BeloteDeck < Deck
 end
 
 class SixtySixDeck < Deck
+  RANKS = [9, :jack, :queen, :king, 10, :ace]
+
   def initialize(cards = nil)
-    @card_ranks = sixty_six_ranks
-    @deal_cards_number = 6
-    initialize_cards(cards)
+    super(RANKS, cards)
   end
 
   def deal
-    SixtySixHand.new(cards_to_be_dealt)
+    Hand.new(self, 6)
   end
-end
 
-class SixtySixHand < Deck::Hand
-  def forty?(trump_suit)
-    trump_kings_and_queens = cards.find_all do |card|
-      card.suit == trump_suit and
-        (card.rank == :queen or card.rank == :king)
+  class Hand < Deck::Hand
+    def forty?(trump_suit)
+      king_and_queen_from_same_suit?(trump_suit)
     end
-    trump_kings_and_queens.size == 2
-  end
 
-  def twenty?(trump_suit)
-    KingsAndQueensMethods.belote?(cards) and (not forty?(trump_suit))
+    def twenty?(trump_suit)
+      king_and_queen_from_same_suit?(Deck::SUITS - [trump_suit])
+    end
+
+    private
+
+    def king_and_queen_from_same_suit?(allowed_suit)
+      allowed_suit.any? do |suit|
+        has_king = @cards.include?(Card.new(:king, suit))
+        has_queen = @cards.include?(Card.new(:queen, suit))
+
+        has_king and has_queen
+      end
+    end
   end
 end
