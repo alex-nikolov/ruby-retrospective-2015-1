@@ -1,25 +1,3 @@
-module RanksAndSuits
-  def standard_ranks
-    {
-      ace: 1, king: 2, queen: 3, jack: 4,
-      10 => 5, 9 => 6, 8 => 7, 7 => 8, 6 => 9,
-      5 => 10, 4 => 11, 3 => 12, 2 => 13,
-    }
-  end
-
-  def belote_ranks
-    {ace: 1, 10 => 2, king: 3, queen: 4, jack: 5, 9 => 6, 8 => 7, 7 => 8}
-  end
-
-  def sixty_six_ranks
-    {ace: 1, 10 => 2, king: 3, queen: 4, jack: 5, 9 => 6}
-  end
-
-  def card_suits
-    [:spades, :hearts, :diamonds, :clubs]
-  end
-end
-
 module KingsAndQueensMethods
   def belote?(cards)
     kings_queens = cards.find_all { |x| x.rank == :king or x.rank == :queen }
@@ -31,29 +9,36 @@ end
 
 class Card
   def initialize(rank, suit)
-    @rank, @suit = rank, suit
+    @rank = rank
+    @suit = suit
   end
 
-  attr_reader :rank
-  attr_reader :suit
+  attr_reader :rank, :suit
 
   def to_s
-    rank_to_s, suit_to_s = @rank.to_s, @suit.to_s
-    rank_to_s.capitalize + " of " + suit_to_s.capitalize
+    @rank.to_s.capitalize + " of " + @suit.to_s.capitalize
   end
 
-  def ==(rs)
-    @rank == rs.rank and @suit == rs.suit
+  def ==(right_side)
+    @rank == right_side.rank and @suit == right_side.suit
   end
 end
 
 class Deck
-  include Enumerable, RanksAndSuits
+  include Enumerable
 
-  def initialize(cards = nil)
-    @deal_cards_number = 26
-    @card_ranks = standard_ranks
-    initialize_cards(cards)
+  attr_accessor :cards
+
+  SUITS = [:clubs, :diamonds, :hearts, :spades]
+
+  def initialize(ranks, cards = nil)
+    @ranks = ranks
+
+    if cards
+      @cards = cards
+    else
+      @cards = @ranks.product(@suits).map { |rank, suit| Card.new(rank, suit) }
+    end
   end
 
   def each
@@ -85,59 +70,51 @@ class Deck
   end
 
   def sort
-    @cards.sort_by! { |x| [x.suit.to_s, - @card_ranks[x.rank]] }.reverse!
+    @cards.sort_by! { |c| [c.suit.to_s, - @card_ranks[c.rank]] }.reverse!
   end
 
   def to_s
-    @cards.each { |card| card.to_s }
+    @cards.map { |card| card.to_s }.join("\n")
   end
 
   def deal
-    Hand.new(cards_to_be_dealt)
+    Hand.new(self, 0)
   end
 
-  private
+  class Hand
+    attr_reader :cards
 
-  def initialize_cards(cards)
-    if cards.nil?
-      @cards = Array.new
-      rank_and_suit_combinations = @card_ranks.keys.product(card_suits)
-      rank_and_suit_combinations.each { |x| @cards << Card.new(x[0], x[1]) }
-    else
-      @cards = cards
+    def initialize(deck, size)
+      @cards = deck.cards.shift(size)
+    end
+
+    def size
+      @cards.size
     end
   end
-
-  def cards_to_be_dealt
-    @cards.shift(@deal_cards_number)
-  end
 end
 
-class Hand
-  def initialize(card_array)
-    @cards = card_array
-  end
 
-  attr_reader :cards
-
-  def size
-    @cards.size
-  end
-end
 
 class WarDeck < Deck
+  RANKS = [2, 3, 4, 5, 6, 7, 8, 9, 10, :jack, :queen, :king, :ace]
+
+  def initialize(cards = nil)
+    super(RANKS, cards)
+  end
+
   def deal
-    WarHand.new(cards_to_be_dealt)
-  end
-end
-
-class WarHand < Hand
-  def play_card
-    @cards.delete_at(0)
+    WarHand.new(self, 26)
   end
 
-  def allow_face_up?
-    size <= 3
+  class WarHand < Deck::Hand
+    def play_card
+      @cards.delete_at(0)
+    end
+
+    def allow_face_up?
+      size <= 3
+    end
   end
 end
 
@@ -151,66 +128,65 @@ class BeloteDeck < Deck
   def deal
     BeloteHand.new(cards_to_be_dealt)
   end
-end
 
-class BeloteHand < Hand
-  include RanksAndSuits
+  class BeloteHand < Deck::Hand
 
-  def highest_of_suit(suit)
-    same_suit_cards = cards.find_all { |x| x.suit == suit }
-    same_suit_card.min_by { |x| belote_ranks[x.rank] }
-  end
-
-  def belote?
-    KingsAndQueensMethods.belote?(cards)
-  end
-
-  def tierce?
-    consecutive_from_same_suit?(3)
-  end
-
-  def quarte?
-    consecutive_from_same_suit?(4)
-  end
-
-  def quint?
-    consecutive_from_same_suit?(5)
-  end
-
-  def carre_of_jacks?
-    four_of_a_kind?(:jack)
-  end
-
-  def carre_of_nines?
-    four_of_a_kind?(9)
-  end
-
-  def carre_of_aces?
-    four_of_a_kind?(:ace)
-  end
-
-  private
-
-  def consecutive_from_same_suit?(number_of_cards)
-    sorted_cards = cards.sort_by { |x| [x.suit, - belote_ranks[x.rank]] }
-
-    sorted_cards.each_cons(number_of_cards).any? do |card_group|
-      same_suit = card_group.all? { |card| card.suit == card_group[0].suit }
-      same_suit and consecutive_cards?(card_group)
+    def highest_of_suit(suit)
+      same_suit_cards = cards.find_all { |x| x.suit == suit }
+      same_suit_card.min_by { |x| belote_ranks[x.rank] }
     end
-  end
 
-  def consecutive_cards?(sorted_card_group)
-    rank_plus_index = Array.new
-
-    sorted_card_group.each_with_index do |card, i|
-      rank_plus_index[i] = belote_ranks[card.rank] + i
+    def belote?
+      KingsAndQueensMethods.belote?(cards)
     end
-    rank_plus_index.uniq.length == 1
-  end
 
-  def four_of_a_kind?(rank)
-    cards.count { |card| card.rank == rank }
+    def tierce?
+      consecutive_from_same_suit?(3)
+    end
+
+    def quarte?
+      consecutive_from_same_suit?(4)
+    end
+
+    def quint?
+      consecutive_from_same_suit?(5)
+    end
+
+    def carre_of_jacks?
+      four_of_a_kind?(:jack)
+    end
+
+    def carre_of_nines?
+      four_of_a_kind?(9)
+    end
+
+    def carre_of_aces?
+      four_of_a_kind?(:ace)
+    end
+
+    private
+
+    def consecutive_from_same_suit?(number_of_cards)
+      sorted_cards = cards.sort_by { |x| [x.suit, - belote_ranks[x.rank]] }
+
+      sorted_cards.each_cons(number_of_cards).any? do |card_group|
+        same_suit = card_group.all? { |card| card.suit == card_group[0].suit }
+        same_suit and consecutive_cards?(card_group)
+      end
+    end
+
+    def consecutive_cards?(sorted_card_group)
+      rank_plus_index = Array.new
+
+      sorted_card_group.each_with_index do |card, i|
+        rank_plus_index[i] = belote_ranks[card.rank] + i
+      end
+      rank_plus_index.uniq.length == 1
+    end
+
+    def four_of_a_kind?(rank)
+      cards.count { |card| card.rank == rank }
+    end
   end
 end
 
@@ -226,7 +202,7 @@ class SixtySixDeck < Deck
   end
 end
 
-class SixtySixHand < Hand
+class SixtySixHand < Deck::Hand
   def forty?(trump_suit)
     trump_kings_and_queens = cards.find_all do |card|
       card.suit == trump_suit and
